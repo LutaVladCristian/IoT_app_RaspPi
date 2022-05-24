@@ -12,20 +12,22 @@
 
 int end_of_program = 0;
 
-void endSignal(int signal) { //function in order to force stop the communication
+void endSignal(int signal) {
 	end_of_program = 1;
 	printf("\nEnd of the program.\n\n");
 }
 
-typedef struct sample {
+typedef struct sample
+{
 	double x;
 	double y;
 	double z;
 	double clear;
 	double red;
-	double green;
-	double blue;
-} Sample;
+    double green;
+    double blue;
+}Sample;
+
 
 int main(int argc, char *argv[]) {
 	int sockfd, portno, n;
@@ -72,8 +74,8 @@ int main(int argc, char *argv[]) {
 		error("ERROR reading from socket\n");
 	printf("%s\n", buffer);
 
-	ColorSensor *value_color = malloc(sizeof(ColorSensor) * 1); //pointer which reads ACCELEROMETER input
-	Acceleration *value_acc = malloc(sizeof(Acceleration) * 1); //pointer which reads COLOR SENSOR input
+	ColorSensor *value_color = malloc(sizeof(ColorSensor) * 1);
+	Acceleration *value_acc = malloc(sizeof(Acceleration) * 1);
 	Sample value_sample;
 
 	while (end_of_program != 1) {
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
 		value_sample.green = value_color->green;
 		value_sample.red = value_color->red;
 
-		sendto(sockfd, &value_sample, sizeof(Sample), 0, &serv_addr, sizeof(serv_addr));  //send the package to the SERVER
+		sendto(sockfd, &value_sample, sizeof(Sample), 0, &serv_addr, sizeof(serv_addr));
 
 		sleep(10);
 	}

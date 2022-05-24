@@ -24,7 +24,7 @@ typedef struct sample {
 	double blue;
 } Sample;
 
-double who_max(double v[], int n) { //function to determine MAX of 6 measurements
+double who_max(double v[], int n) {
 	double max = v[0];
 	for (int i = 0; i < n; i++)
 		if (max < v[i])
@@ -32,7 +32,7 @@ double who_max(double v[], int n) { //function to determine MAX of 6 measurement
 	return max;
 }
 
-double who_min(double v[], int n) { //function to determine MIN of 6 measurements
+double who_min(double v[], int n) {
 	double min = v[0];
 	for (int i = 0; i < n; i++)
 		if (min > v[i])
@@ -40,14 +40,14 @@ double who_min(double v[], int n) { //function to determine MIN of 6 measurement
 	return min;
 }
 
-float mean_value(double v[], int n) { //function to determine MEAN VALUE of 6 measurements
+float mean_value(double v[], int n) {
 	double sum = 0;
 	for (int i = 0; i < n; i++)
 		sum += v[i];
 	return (float) sum / n;
 }
 
-float std_value(double v[], int n) { //function to determine SANDARD DEVIATION VALUE of 6 measurements
+float std_value(double v[], int n) {
 	float mean = mean_value(v, n);
 	float sum = 0;
 	for (int i = 0; i < n; i++)
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
 	printf("Client awaiting:\n");
 
-	bzero(buffer, 256); //SERVER waits for a CLIENT to communicate with
+	bzero(buffer, 256);
 	n = read(newsockfd, buffer, 255);
 	if (strcmp(buffer, "Hello Server!") != 0) {
 		printf("Wrong Message!\n");
@@ -173,10 +173,8 @@ int main(int argc, char *argv[]) {
 			i = 0;
 		}
 
-		recvfrom(newsockfd, &value_receive[i], sizeof(Sample), 0, //read the package sent by the CLIENT
-				(struct sockaddr*) &cli_addr, &clilen);
-
-		acc_x[i] = value_receive[i].x; //copy the sample data into several a vectors
+		recvfrom(newsockfd, &value_receive[i], sizeof(Sample), 0, (struct sockaddr*) &cli_addr, &clilen);
+		acc_x[i] = value_receive[i].x;
 		acc_y[i] = value_receive[i].y;
 		acc_z[i] = value_receive[i].z;
 
@@ -185,7 +183,8 @@ int main(int argc, char *argv[]) {
 		green[i] = value_receive[i].green;
 		red[i] = value_receive[i].red;
 
-		printf("=====Sample No.%d received!=====\n", i + 1);
+
+		printf("=====Sample No.%d received!=====\n", i+1);
 		printf("acc X = %.1f\n", value_receive[i].x);
 		printf("acc Y = %.1f\n", value_receive[i].y);
 		printf("acc Z = %.1f\n", value_receive[i].z);
