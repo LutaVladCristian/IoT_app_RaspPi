@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 		error("ERROR connecting\n");
 
 	bzero(buffer, 256);
-	sprintf(buffer, "Hello Server!"); //sends the first message to the SERVER
+	sprintf(buffer, "Hello Server!");
 	n = write(sockfd, buffer, strlen(buffer));
 	if (n < 0)
 		error("ERROR writing to socket\n");

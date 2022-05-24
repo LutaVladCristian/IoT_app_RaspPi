@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
 	bzero(buffer, 256); //SERVER waits for a CLIENT to communicate with
 	n = read(newsockfd, buffer, 255);
-	if (strcmp(buffer, "Hello Server!") != 0) { //checks if it is the right message from the CLIENT
+	if (strcmp(buffer, "Hello Server!") != 0) {
 		printf("Wrong Message!\n");
 		return 0;
 	}
