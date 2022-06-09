@@ -15,43 +15,47 @@ void error(const char *msg) {
 }
 
 typedef struct sample {
-	double x;
-	double y;
-	double z;
-	double clear;
-	double red;
-	double green;
-	double blue;
+	double x[10];
+	double y[10];
+	double z[10];
+	double clear[10];
+	double red[10];
+	double green[10];
+	double blue[10];
 } Sample;
 
-double who_max(double v[], int n) { //function to determine MAX of 6 measurements
-	double max = v[0];
+double who_max(double v[][10], int n) { //function to determine MAX of 6 measurements
+	double max = v[0][0];
 	for (int i = 0; i < n; i++)
-		if (max < v[i])
-			max = v[i];
+		for (int j = 0; j < 10; j++)
+			if (max < v[i][j])
+				max = v[i][j];
 	return max;
 }
 
-double who_min(double v[], int n) { //function to determine MIN of 6 measurements
-	double min = v[0];
+double who_min(double v[][10], int n) { //function to determine MIN of 6 measurements
+	double min = v[0][0];
 	for (int i = 0; i < n; i++)
-		if (min > v[i])
-			min = v[i];
+		for (int j = 0; j < 10; j++)
+			if (min < v[i][j])
+				min = v[i][j];
 	return min;
 }
 
-float mean_value(double v[], int n) { //function to determine MEAN VALUE of 6 measurements
+float mean_value(double v[][10], int n) { //function to determine MEAN VALUE of 6 measurements
 	double sum = 0;
 	for (int i = 0; i < n; i++)
-		sum += v[i];
-	return (float) sum / n;
+		for (int j = 0; j < 10; j++)
+			sum += v[i][j];
+	return (float) sum / (n*10);
 }
 
-float std_value(double v[], int n) { //function to determine SANDARD DEVIATION VALUE of 6 measurements
+float std_value(double v[][10], int n) { //function to determine SANDARD DEVIATION VALUE of 6 measurements
 	float mean = mean_value(v, n);
 	float sum = 0;
 	for (int i = 0; i < n; i++)
-		sum += pow(v[i] - mean, 2);
+		for (int j = 0; j < 10; j++)
+			sum += pow(v[i][j] - mean, 2);
 	return (float) sqrt(sum / n);
 }
 
@@ -105,8 +109,8 @@ int main(int argc, char *argv[]) {
 		error("ERROR writing to socket\n");
 
 	Sample value_receive[6];
-	double acc_x[6], acc_y[6], acc_z[6];
-	double clear[6], blue[6], green[6], red[6];
+	double acc_x[6][10], acc_y[6][10], acc_z[6][10];
+	double clear[6][10], blue[6][10], green[6][10], red[6][10];
 	int i = 0;
 
 	while (1) {
@@ -176,28 +180,33 @@ int main(int argc, char *argv[]) {
 		recvfrom(newsockfd, &value_receive[i], sizeof(Sample), 0, //read the package sent by the CLIENT
 				(struct sockaddr*) &cli_addr, &clilen);
 
-		acc_x[i] = value_receive[i].x; //copy the sample data into several a vectors
-		acc_y[i] = value_receive[i].y;
-		acc_z[i] = value_receive[i].z;
+		for(int j = 0; j < 10; j++)
+		{
 
-		clear[i] = value_receive[i].clear;
-		blue[i] = value_receive[i].blue;
-		green[i] = value_receive[i].green;
-		red[i] = value_receive[i].red;
+					acc_x[i][j] = value_receive[i].x[j]; //copy the sample data into several a vectors
+					acc_y[i][j] = value_receive[i].y[j];
+					acc_z[i][j] = value_receive[i].z[j];
 
-		printf("=====Sample No.%d received!=====\n", i + 1);
-		printf("acc X = %.1f\n", value_receive[i].x);
-		printf("acc Y = %.1f\n", value_receive[i].y);
-		printf("acc Z = %.1f\n", value_receive[i].z);
+					clear[i][j] = value_receive[i].clear[j];
+					blue[i][j] = value_receive[i].blue[j];
+					green[i][j] = value_receive[i].green[j];
+					red[i][j] = value_receive[i].red[j];
 
-		printf("\n");
+					printf("=====Sample No.%d::%d received!=====\n", i + 1, j + 1);
+					printf("acc X = %.1f\n", value_receive[i].x[j]);
+					printf("acc Y = %.1f\n", value_receive[i].y[j]);
+					printf("acc Z = %.1f\n", value_receive[i].z[j]);
 
-		printf("clear: %.1f\n", value_receive[i].clear);
-		printf("blue: %.1f\n", value_receive[i].blue);
-		printf("green: %.1f\n", value_receive[i].green);
-		printf("red: %.1f\n", value_receive[i].red);
+					printf("\n");
 
-		printf("\n");
+					printf("clear: %.1f\n", value_receive[i].clear[j]);
+					printf("blue: %.1f\n", value_receive[i].blue[j]);
+					printf("green: %.1f\n", value_receive[i].green[j]);
+					printf("red: %.1f\n", value_receive[i].red[j]);
+
+					printf("\n");
+		}
+
 
 		i++;
 	}
