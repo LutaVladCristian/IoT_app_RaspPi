@@ -70,7 +70,7 @@ on the IP assigned to the Raspberry Pi in an Ubuntu terminal.
 ```
 ssh user@ip_of_rasp_pi
 ```
-After booting for the first time you are supposed to be in **root**. For SSH connection you will need to **create another user becouse you won't be able to connect directly to root**.
+After booting for the first time you are supposed to be in **root**. For SSH connection you will need to **create another user because you won't be able to connect directly to root**.
 Your options for accesing the **client** are to connect peripherals to your Rasp Pi or to set a Putty session using a serial cable. 
 
 ##### 5. How to run the code:
