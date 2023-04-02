@@ -22,7 +22,7 @@ Parts list:
 - Raspberry Pi
 - accelerometer **MPU- 6050**
 - colour sensor **TCS**
-- fire
+- wires
 - SD card
 
 ##### 4. Operating system:
