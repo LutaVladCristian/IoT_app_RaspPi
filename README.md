@@ -2,7 +2,7 @@
 
 ##### 1. Introduction:
 
-The aim of the project is to build an IoT application that will use locally configured a
+The aim of the project is to build an IoT application that will use locally configured
 TCP communication between Raspberry Pi3 using a BCM2385 processor
 (client) and Linux Ubuntu (server), using the C language.
 
