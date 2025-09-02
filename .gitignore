@@ -1,1 +1,19 @@
-/.metadata/
+# Eclipse metadata
+.metadata/
+*.log
+.settings/
+.cproject
+.project
+
+# Build output binaries
+client/Debug/
+client/Release/
+server/Debug/
+server/Release/
+server   # compiled binary
+*.o
+*.d
+
+# OS junk
+.DS_Store
+Thumbs.db
