@@ -1,19 +1,23 @@
-# Eclipse metadata
+# Eclipse project files
 .metadata/
 *.log
 .settings/
 .cproject
 .project
 
-# Build output binaries
+# Build output binaries and objects
+*.o
+*.d
+*.so
+*.a
+*.out
+*.exe
+server
 client/Debug/
 client/Release/
 server/Debug/
 server/Release/
-server   # compiled binary
-*.o
-*.d
 
-# OS junk
+# OS-specific files
 .DS_Store
 Thumbs.db
