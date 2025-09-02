@@ -1,110 +1,122 @@
-## Client-Server communication using Embedded Linux on Raspberry Pi
+# Client-Server Communication using Embedded Linux on Raspberry Pi
 
-##### 1. Introduction:
+### 1. Introduction
 
-The project aims to build an IoT application that will use locally configured
-TCP communication between Raspberry Pi3 using a BCM2385 processor
-(client) and Linux Ubuntu (server), using the C language.
+This project aims to build an IoT application using locally configured  
+TCP communication between a Raspberry Pi 3 (with a BCM2385 processor, acting as the **client**) and a Linux Ubuntu machine (acting as the **server**).  
+Both client and server applications are written in C.
 
-##### 2. General description:
+---
 
-To configure an embedded Linux operating system, suitable for the requirements;
-we used the Buildroot tool for our Raspberry Pi, which we will use as a client in our
-communication.
-The client will read one set of data per second from two sensors simultaneously
-(MPU-6050 & TCS34725) and send 10 measurements at a time as a data packet to the
-server running on Linux Ubuntu from a virtual machine.
-The server will calculate some experimental characteristics for every 10 data packets
-(100 measurements) received from the client.
+### 2. General Description
 
-##### 3. Hardware Design:
-Parts list:
-- Raspberry Pi
-- accelerometer **MPU- 6050**
-- colour sensor **TCS**
-- wires
-- SD card
+To configure an embedded Linux operating system suitable for the project’s requirements, we used the **Buildroot** tool for the Raspberry Pi, which functions as the client in our setup.  
 
-##### 4. Operating system:
+The client reads one set of data per second from two sensors simultaneously:  
+- **MPU-6050** (accelerometer/gyroscope)  
+- **TCS34725** (color sensor)  
 
-Because we will use the Buildroot tool to configure the operating system, we can
-distinguish 3 machines: **build** (virtual machine, where the toolchain is built), **host**
-(virtual machine, where the toolchain is executed to create binary files) and **target**
-(Raspberry Pi, where we will execute the binary files created by the host).
+It groups 10 measurements into a single data packet and sends this packet to the server running on Ubuntu inside a virtual machine.  
 
-The C/C++ toolchain obtained for our client will be composed:
-- binutils (set of CPU model-specific instructions for generating and
-    manipulating binary files)
-- kernel libraries
-- C/C++ specific libraries
-- compilers (gcc/g++)
-- debugger (gdb)
+The server processes incoming data and calculates experimental characteristics for every 10 data packets (i.e., 100 measurements).
 
-After installing Buildroot, in the directory where it is installed, in the terminal, we run
-the command:
-```
-$ make menuconfig
-```
+---
 
-From this menu, we will configure our embedded Linux operating system.
-To add a connection to the local Internet network, **mdev support** and
-**Broadcom firmware support** for wireless hardware will need to be included in the
-configuration. Then edit the files:
+### 3. Hardware Design
 
-- **wpa_supplicant.conf** (which contains the SSID and password of the
-    network we want to connect to)
-- **./board/raspberrypi3/interfaces** (for adding a wlan0 internet interface)
+**Parts list:**
+- Raspberry Pi 3  
+- Accelerometer: **MPU-6050**  
+- Color sensor: **TCS34725**  
+- Wires and connectors  
+- SD card  
 
+---
 
-The complete configuration (including the **mosquitto client** tool and **I2C bus
-protocol** support) that we used for this project is in the file
-**.config** in the **Buildroot** directory, and to compile it and generate the kernel that will
-later be put on an **SD card** (the **client's hard drive**) , we run the commands:
-```
-$ make
-$ sudo dd if=output/images/sdcard.img of=/dev/sdb
+### 4. Operating System Setup
+
+Using **Buildroot**, we distinguish three machines in the workflow:  
+- **Build machine** – virtual machine where the toolchain is built.  
+- **Host machine** – virtual machine where the toolchain is executed to generate binary files.  
+- **Target machine** – Raspberry Pi, where binaries are deployed and executed.  
+
+The toolchain for the client includes:  
+- **binutils** – CPU-specific tools for generating and manipulating binaries  
+- **Kernel libraries**  
+- **C/C++ libraries**  
+- **Compilers (gcc/g++)**  
+- **Debugger (gdb)**  
+
+#### Configuring Buildroot
+After installing Buildroot, navigate to its directory and run:
+```bash
+make menuconfig
 ```
 
-To handle the client in its terminal, we will use an SSH connection based
-on the IP assigned to the Raspberry Pi in an Ubuntu terminal.
+From this menu, configure the embedded Linux OS.  
+To enable network connectivity, include **mdev support** and **Broadcom firmware support**.  
+
+Then configure:  
+- **wpa_supplicant.conf** – stores Wi-Fi SSID and password.  
+- **./board/raspberrypi3/interfaces** – adds a `wlan0` network interface.  
+
+The complete configuration (including the **mosquitto client** and **I2C bus support**) is stored in the `.config` file inside the Buildroot directory.  
+To compile and generate the kernel image for the SD card (used as the client’s storage), run:  
+```bash
+make
+sudo dd if=output/images/sdcard.img of=/dev/sdb
 ```
+
+#### Accessing the Raspberry Pi
+You can connect via SSH using its assigned IP address:
+```bash
 ssh user@ip_of_rasp_pi
 ```
-After booting for the first time, you are supposed to be in **root**. For the SSH connection, you will need to **create another user because you won't be able to connect directly to root**.
-Your options for accessing the **client** are to connect peripherals to your Rasp Pi or to set a Putty session using a serial cable. 
 
-##### 5. How to run the code:
-a) **server** code must be compiled in Ubuntu terminal as usual:
-```
+> **Note:** After the first boot, you will be logged in as **root**. Since SSH does not allow direct root login, you must create a new user account.  
+> You may also connect peripherals directly to the Raspberry Pi or use a **PuTTY session with a serial cable**.
+
+---
+
+### 5. Running the Code
+
+**a) Server (on Ubuntu):**
+```bash
 gcc server.c -lm -o server 
 ./server port_number
 ```
-b) **client** code must be compiled using the Embedded Linux cross-compiler in Eclipse. After the binaries are generated must be moved to the ***client*** and executed with the command:
-```
+
+**b) Client (on Raspberry Pi):**  
+Compile the code using the cross-compiler in Eclipse. After generating the binaries, copy them to the client device and run:
+```bash
 ./client port_number
-``` 
+```
+
+---
+
+### 6. ThingsBoard Integration
+
+[ThingsBoard](https://thingsboard.io/docs/user-guide/install/ubuntu/) is an open-source IoT platform that enables rapid development, management, and scaling of IoT projects.  
+
+We integrated ThingsBoard to visualize and manage sensor data.  
+
+- **MQTT protocol** was used for lightweight publish/subscribe messaging.  
+- **PostgreSQL database** was configured to store variables sent by the client.  
+- **Mosquitto client** was enabled in the Buildroot configuration.  
+
+With this setup, our IoT application can send sensor data from the client to ThingsBoard, where it is stored, managed, and **graphed in real time**.
+
+---
+
+### 7. Communication Flow Diagram
+
+The following diagram summarizes the system communication flow:
+
+![Communication Flow](communication_flow.png)
 
 
-##### 6. ThingsBoard integration:
-ThingsBoard is an open-source IoT platform that enables rapid development,
-management and scaling of IoT projects.
-To set the ThingsBoard follow the link:
-https://thingsboard.io/docs/user-guide/install/ubuntu/.  
-The MQTT protocol provides an easy way to carry messages using a
-publish/subscribe model. This makes it suitable for IoT messaging, such as low-power
-sensors or mobile devices, phones, embedded computers, or microcontrollers.  
-After installing this platform on the server (Ubuntu), configuring a PostgreSQL
-database for the variables sent by the client (data read from the sensors), including the
-Mosquitto publisher protocol in the buildroot configuration; we managed to have a
-local integration of our IoT application in the ThingsBoard environment.
-This gives you the possibility to graph the data read by the customer in real time.
-
-
-##### 7. Bibliography:
+### 8. Bibliography:
 - https://www.geeksforgeeks.org/socket-programming-cc/
 - https://thingsboard.io/docs/user-guide/install/ubuntu/
 - https://www.linuxhowtos.org/C_C++/socket.htm
 - https://github.com/
-
-
-
