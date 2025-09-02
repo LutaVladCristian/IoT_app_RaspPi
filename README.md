@@ -110,8 +110,9 @@ With this setup, our IoT application can send sensor data from the client to Thi
 
 The following diagram summarizes the system communication flow:
 
-![Communication Flow](communication_flow.png)
+<img width="768" height="100" alt="communication_flow" src="https://github.com/user-attachments/assets/a9c9b0b3-705c-4717-a60b-90cf25a0d054" />
 
+---
 
 ### 8. Bibliography:
 - https://www.geeksforgeeks.org/socket-programming-cc/
