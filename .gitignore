@@ -18,6 +18,10 @@ client/Release/
 server/Debug/
 server/Release/
 
+# Build outputs
+server
+client
+
 # OS-specific files
 .DS_Store
 Thumbs.db

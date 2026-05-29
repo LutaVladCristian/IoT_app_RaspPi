@@ -1,22 +1,52 @@
 #include "client.h"
 
-int end_of_program = 0;
+volatile sig_atomic_t end_of_program = 0;
+
+static int write_full(int fd, const void *buf, size_t len) {
+	const char *cursor = buf;
+
+	while (len > 0) {
+		ssize_t written = write(fd, cursor, len);
+		if (written < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -1;
+		}
+		if (written == 0) {
+			return -1;
+		}
+
+		cursor += written;
+		len -= (size_t) written;
+	}
+
+	return 0;
+}
+
+void error(const char *msg) {
+	perror(msg);
+	exit(1);
+}
 
 void endSignal(int signal) { //function in order to force stop the communication
+	(void) signal;
 	end_of_program = 1;
-	printf("\nEnd of the program.\n\n");
 }
 
 int main(int argc, char *argv[]) {
-	int sockfd, portno, n;
+	int sockfd, portno;
+	ssize_t n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 
 	char buffer[256];
 	if (argc < 3) {
-		fprintf(stderr, "usage %s hostname port\n", argv[0]);
-		exit(0);
+		fprintf(stderr, "usage: %s hostname port\n", argv[0]);
+		exit(1);
 	}
+
+	signal(SIGINT, endSignal);
 
 	portno = atoi(argv[2]);
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -41,63 +71,66 @@ int main(int argc, char *argv[]) {
 		error("ERROR connecting\n");
 
 	bzero(buffer, 256);
-	sprintf(buffer, "Hello Server!"); //sends the first message to the SERVER
-	n = write(sockfd, buffer, strlen(buffer));
-	if (n < 0)
+	snprintf(buffer, sizeof(buffer), "Hello Server!"); //sends the first message to the SERVER
+	if (write_full(sockfd, buffer, strlen(buffer)) < 0)
 		error("ERROR writing to socket\n");
 
 	bzero(buffer, 256);
 	n = read(sockfd, buffer, 255);
 	if (n < 0)
 		error("ERROR reading from socket\n");
+	buffer[n] = '\0';
 	printf("%s\n", buffer);
 
-	ColorSensor *value_color = malloc(sizeof(ColorSensor) * 1); //pointer which reads ACCELEROMETER input
-	Acceleration *value_acc = malloc(sizeof(Acceleration) * 1); //pointer which reads COLOR SENSOR input
-	Sample value_sample;
+	ColorSensor value_color = {0}; //reads color sensor input
+	Acceleration value_acc = {0}; //reads accelerometer input
+	Sample value_sample = {0};
 
 	char msg[1024];
 	char json_data[1024];
 	char ip[] = "192.168.0.18";
 
 	char call[] =
-			"mosquitto_pub -d -q 1 -h \"%s\" -p \"1883\" -t \"v1/devices/me/telemetry\" -u \"vSZz10IngBRjmIj5rBDM\" -m %s"; //call the mosquito server
+			"mosquitto_pub -d -q 1 -h \"%s\" -p \"1883\" -t \"v1/devices/me/telemetry\" -u \"vSZz10IngBRjmIj5rBDM\" -m '%s'"; //call the mosquito server
 
 
 	while (end_of_program != 1) {
-		signal(SIGINT, endSignal);
 
-		for (int i = 0; i < 10; i++) {
-			send_socket_message_acc(value_acc);
-			send_socket_message_color(value_color);
+		for (int i = 0; i < 10 && end_of_program != 1; i++) {
+			send_socket_message_acc(&value_acc);
+			send_socket_message_color(&value_color);
 
-			value_sample.x[i] = value_acc->x;
-			value_sample.y[i] = value_acc->y;
-			value_sample.z[i] = value_acc->z;
+			value_sample.x[i] = value_acc.x;
+			value_sample.y[i] = value_acc.y;
+			value_sample.z[i] = value_acc.z;
 
-			value_sample.clear[i] = value_color->clear;
-			value_sample.blue[i] = value_color->blue;
-			value_sample.green[i] = value_color->green;
-			value_sample.red[i] = value_color->red;
-
-
-			sprintf(json_data,
-					"\"{\"acc_x\":%f, \"acc_y\":%f, \"acc_z\":%f, \"red\":%f, \"green\":%f, \"blue\":%f, \"light\":%f}\"",
-					value_acc->x, value_acc->y, value_acc->z, value_color->red, value_color->green, value_color->blue, value_color->clear);
-			sprintf(msg, call, ip, json_data); //merge all the data in a single string
+			value_sample.clear[i] = value_color.clear;
+			value_sample.blue[i] = value_color.blue;
+			value_sample.green[i] = value_color.green;
+			value_sample.red[i] = value_color.red;
 
 
-			if (i == 9)
-				sendto(sockfd, &value_sample, sizeof(Sample), 0, &serv_addr,
-						sizeof(serv_addr));  //send the package to the SERVER
+			snprintf(json_data, sizeof(json_data),
+					"{\"acc_x\":%f, \"acc_y\":%f, \"acc_z\":%f, \"red\":%f, \"green\":%f, \"blue\":%f, \"light\":%f}",
+					value_acc.x, value_acc.y, value_acc.z, value_color.red, value_color.green, value_color.blue, value_color.clear);
+			snprintf(msg, sizeof(msg), call, ip, json_data); //merge all the data in a single string
 
-			system(msg);
+
+			if (i == 9) {
+				if (write_full(sockfd, &value_sample, sizeof(value_sample)) < 0)
+					error("ERROR writing sample to socket");
+			}
+
+			if (system(msg) < 0) {
+				perror("system");
+			}
 
 			sleep(1);
 		}
 
 	}
 
+	printf("\nEnd of the program.\n\n");
 	close(sockfd);
 
 	return 0;

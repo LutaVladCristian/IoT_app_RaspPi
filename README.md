@@ -2,7 +2,7 @@
 
 ### 1. Introduction
 
-This project aims to build an IoT application using locally configured TCP communication between a Raspberry Pi 3 (with a BCM2385 processor, acting as the **client**) and a Linux Ubuntu machine (acting as the **server**). Both client and server applications are written in C.
+This project aims to build an IoT application using locally a TCP-based sensor sampling application for Raspberry Pi 3 (with a BCM2385 processor, acting as the **client**) and a Linux Ubuntu machine (acting as the **server**). Both client and server applications are written in C.
 
 ---
 
