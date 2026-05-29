@@ -22,26 +22,6 @@ The server receives the packets, stores sample windows, and computes summary sta
 3. After 10 measurements, the client sends the packet to the server.
 4. The server receives each packet and accumulates 6 windows (60 samples total) before computing aggregate statistics.
 
-## Build and run
-Use the generated Makefile from the repository root:
-
-```bash
-make clean
-make
-```
-
-Run the server on the Linux machine:
-
-```bash
-./server 5000
-```
-
-Run the client on the Raspberry Pi or target machine:
-
-```bash
-./client <server-hostname-or-ip> 5000
-```
-
 ## Reliability notes
 - The client now uses stack storage for sensor samples instead of heap allocation, which avoids per-run memory leaks.
 - The server now reads TCP payloads using `recv()` and validates the number of bytes received.
