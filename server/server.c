@@ -4,10 +4,56 @@
 #include "math.h"
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+static int read_full(int fd, void *buf, size_t len) {
+	char *cursor = buf;
+
+	while (len > 0) {
+		ssize_t bytes_read = recv(fd, cursor, len, 0);
+		if (bytes_read < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -1;
+		}
+		if (bytes_read == 0) {
+			return 1;
+		}
+
+		cursor += bytes_read;
+		len -= (size_t) bytes_read;
+	}
+
+	return 0;
+}
+
+static int write_full(int fd, const void *buf, size_t len) {
+	const char *cursor = buf;
+
+	while (len > 0) {
+		ssize_t written = write(fd, cursor, len);
+		if (written < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -1;
+		}
+		if (written == 0) {
+			return -1;
+		}
+
+		cursor += written;
+		len -= (size_t) written;
+	}
+
+	return 0;
+}
 
 void error(const char *msg) {
 	perror(msg);
@@ -37,7 +83,7 @@ double who_min(double v[][10], int n) { //function to determine MIN of 6 measure
 	double min = v[0][0];
 	for (int i = 0; i < n; i++)
 		for (int j = 0; j < 10; j++)
-			if (min < v[i][j])
+			if (v[i][j] < min)
 				min = v[i][j];
 	return min;
 }
@@ -56,7 +102,7 @@ float std_value(double v[][10], int n) { //function to determine SANDARD DEVIATI
 	for (int i = 0; i < n; i++)
 		for (int j = 0; j < 10; j++)
 			sum += pow(v[i][j] - mean, 2);
-	return (float) sqrt(sum / n);
+	return (float) sqrt(sum / (n*10));
 }
 
 int main(int argc, char *argv[]) {
@@ -64,7 +110,7 @@ int main(int argc, char *argv[]) {
 	socklen_t clilen;
 	char buffer[256];
 	struct sockaddr_in serv_addr, cli_addr;
-	int n;
+	ssize_t n;
 
 	if (argc < 2) {
 		fprintf(stderr, "ERROR, no port provided\n");
@@ -96,16 +142,24 @@ int main(int argc, char *argv[]) {
 
 	bzero(buffer, 256); //SERVER waits for a CLIENT to communicate with
 	n = read(newsockfd, buffer, 255);
-	if (strcmp(buffer, "Hello Server!") != 0) { //checks if it is the right message from the CLIENT
-		printf("Wrong Message!\n");
-		return 0;
-	}
 	if (n < 0)
 		error("ERROR reading from socket\n");
+	if (n == 0) {
+		printf("Client disconnected before handshake.\n");
+		close(newsockfd);
+		close(sockfd);
+		return 0;
+	}
+	buffer[n] = '\0';
+	if (strcmp(buffer, "Hello Server!") != 0) { //checks if it is the right message from the CLIENT
+		printf("Wrong Message!\n");
+		close(newsockfd);
+		close(sockfd);
+		return 0;
+	}
 	printf("%s\n\n", buffer);
 
-	n = write(newsockfd, "Hello RPI!", 18);
-	if (n < 0)
+	if (write_full(newsockfd, "Hello RPI!", strlen("Hello RPI!")) < 0)
 		error("ERROR writing to socket\n");
 
 	Sample value_receive[6];
@@ -177,8 +231,15 @@ int main(int argc, char *argv[]) {
 			i = 0;
 		}
 
-		recvfrom(newsockfd, &value_receive[i], sizeof(Sample), 0, //read the package sent by the CLIENT
-				(struct sockaddr*) &cli_addr, &clilen);
+		int read_status = read_full(newsockfd, &value_receive[i], sizeof(Sample)); //read the package sent by the CLIENT
+		if (read_status < 0)
+			error("ERROR reading sample from socket\n");
+		if (read_status > 0) {
+			printf("Client disconnected.\n");
+			close(newsockfd);
+			close(sockfd);
+			return 0;
+		}
 
 		for(int j = 0; j < 10; j++)
 		{
